@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHADOW BOT · by GabGari</title>
+<meta name="description" content="SHADOW BOT: vehículo terrestre de inspección con dos cámaras, visión artificial YOLO, sensor de gas y control desde app, mando y voz.">
+<meta name="theme-color" content="#0A0A0A">
+<link rel="icon" href="img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ================================
+   Tokens (paleta del logo SHADOW BOT)
+   ================================ */
+:root{
+  --ink:#0A0A0A;
+  --g1:#1A1F26;
+  --g2:#4B5563;
+  --g3:#B7C1CC;
+  --g4:#E8EDF2;
+  --paper:#F3F5F8;
+  --white:#FFFFFF;
+  --red:#FF1A1A;
+  --red-500:#E0141C;
+  --red-700:#A80D14;
+  --red-900:#5E070C;
+  --text:#2A3038;
+  --muted:#5E6875;
+  --line:rgba(255,255,255,.14);
+  --line-dark:rgba(10,10,10,.12);
+  --f-head:"Chakra Petch",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --container:1200px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font:400 16px/1.6 var(--f-body);color:var(--text);background:var(--ink);overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;background:none;border:0;color:inherit}
+.container{max-width:var(--container);margin:0 auto;padding:0 40px}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font:700 12px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;color:var(--red-500)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+
+/* Reveal on scroll */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.is-visible{opacity:1;transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 26px;font:700 13px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;background:var(--red-500);color:var(--white);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:background .3s ease,transform .4s var(--ease)}
+.btn:hover{background:var(--red);transform:translateY(-2px)}
+
+/* ================================
+   Navbar
+   ================================ */
+.navbar{position:fixed;inset:0 0 auto;z-index:50;transition:background .35s ease,box-shadow .35s ease}
+.navbar.is-solid{background:rgba(10,10,10,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line)}
+.nav-inner{display:flex;align-items:center;gap:40px;height:84px}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.brand-box{width:58px;height:58px;background:var(--ink);border:1px solid rgba(255,255,255,.25);padding:3px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+.brand-box img{width:100%;height:100%;object-fit:cover}
+.brand-text{font:700 15px/1.1 var(--f-head);letter-spacing:.16em;color:var(--white)}
+.brand-text small{display:block;font:500 10px/1.4 var(--f-mono);letter-spacing:.2em;color:rgba(255,255,255,.65)}
+.nav-links{display:flex;gap:28px;list-style:none;margin-left:auto}
+.nav-links a{font:600 13px/1 var(--f-head);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.82);padding:8px 0;position:relative;transition:color .25s ease}
+.nav-links a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;background:var(--white);transition:right .35s var(--ease)}
+.nav-links a:hover,.nav-links a.is-active{color:var(--white)}
+.nav-links a:hover::after,.nav-links a.is-active::after{right:0}
+.nav-toggle{display:none;margin-left:auto;width:44px;height:44px;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.nav-toggle span{width:24px;height:2px;background:var(--white);transition:transform .35s var(--ease),opacity .2s ease}
+.nav-open .nav-toggle span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+.nav-open .nav-toggle span:nth-child(2){opacity:0}
+.nav-open .nav-toggle span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+.mobile-menu{position:fixed;inset:84px 0 auto;z-index:49;background:rgba(10,10,10,.97);border-bottom:1px solid var(--line);padding:12px 20px 28px;display:none}
+.nav-open .mobile-menu{display:block}
+.mobile-menu a{display:block;padding:16px 4px;font:600 16px/1 var(--f-head);letter-spacing:.14em;text-transform:uppercase;color:var(--white);border-bottom:1px solid var(--line)}
+
+/* ================================
+   Hero (IDEA 1)
+   ================================ */
+.hero{position:relative;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;color:var(--white);isolation:isolate}
+.hero > .container{width:100%}
+.hero-bg{position:absolute;inset:0;z-index:-2}
+.hero-bg svg{width:100%;height:100%;display:block}
+.hero-fade{position:absolute;inset:0;z-index:-1;background:
+  radial-gradient(120% 70% at 70% 30%,transparent 40%,rgba(10,10,10,.35) 100%),
+  linear-gradient(180deg,rgba(10,10,10,.18) 0%,transparent 22%,transparent 46%,rgba(10,10,10,.78) 64%,var(--ink) 82%)}
+.hero-main{flex:1;display:grid;grid-template-columns:1fr 1.15fr;align-items:center;gap:20px;padding-top:120px}
+.hero-copy{position:relative;z-index:2}
+.title-wrap{position:relative;z-index:0}
+.ghost{position:absolute;z-index:-1;left:-6px;top:-.6em;font:700 clamp(90px,13vw,190px)/1 var(--f-head);letter-spacing:.02em;color:transparent;-webkit-text-stroke:1.5px rgba(10,10,10,.5);background:linear-gradient(180deg,rgba(10,10,10,.42),rgba(10,10,10,0) 85%);-webkit-background-clip:text;background-clip:text;pointer-events:none;user-select:none;white-space:nowrap}
+.hero-tag{font:700 12px/1 var(--f-mono);letter-spacing:.26em;color:rgba(255,255,255,.8);margin-bottom:clamp(64px,7.5vw,112px);display:flex;align-items:center;gap:10px}
+.hero-tag::before{content:"";width:8px;height:8px;background:var(--white);border-radius:50%;box-shadow:0 0 0 4px rgba(255,255,255,.18);animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.hero-title{font:700 clamp(46px,6.4vw,92px)/.95 var(--f-head);letter-spacing:.02em;text-transform:uppercase;text-shadow:0 10px 40px rgba(0,0,0,.35)}
+.hero-title span{display:block;color:var(--ink);-webkit-text-stroke:1px rgba(255,255,255,.12)}
+.hero-desc{max-width:420px;margin:22px 0 30px;font-size:16px;color:rgba(255,255,255,.86)}
+.explore{display:inline-flex;align-items:center;gap:16px;font:600 14px/1 var(--f-head);letter-spacing:.12em;text-transform:uppercase}
+.explore i{display:block;width:150px;height:1px;background:rgba(255,255,255,.6);position:relative;transition:width .45s var(--ease)}
+.explore i::after{content:"";position:absolute;right:-1px;top:-3px;width:7px;height:7px;border-radius:50%;background:var(--white)}
+.explore:hover i{width:190px}
+
+.hero-visual{position:relative;z-index:1;justify-self:end;width:100%;max-width:720px}
+.robot-stage{position:relative;padding:6% 4% 4%}
+.robot-stage img{position:relative;width:100%;filter:drop-shadow(0 40px 40px rgba(0,0,0,.65)) drop-shadow(0 0 60px rgba(255,26,26,.18));animation:float 6s ease-in-out infinite}
+.robot-stage::after{content:"";position:absolute;left:12%;right:8%;bottom:3%;height:9%;background:radial-gradient(closest-side,rgba(0,0,0,.85),transparent);filter:blur(6px);z-index:-1}
+@keyframes float{50%{transform:translateY(-10px)}}
+.hud{position:absolute;inset:0;pointer-events:none}
+.hud b{position:absolute;width:34px;height:34px;border:2px solid rgba(255,255,255,.75)}
+.hud b:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}
+.hud b:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.hud b:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}
+.hud b:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.hud span{position:absolute;font:700 11px/1 var(--f-mono);letter-spacing:.16em;color:rgba(255,255,255,.85)}
+.hud .t1{top:12px;left:46px}
+.hud .t2{top:12px;right:46px;display:flex;align-items:center;gap:7px}
+.hud .t2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);animation:blink 1.2s ease-in-out infinite}
+.hud .t3{bottom:12px;right:46px;color:rgba(255,255,255,.55)}
+
+.specs{display:grid;grid-template-columns:150px repeat(5,1fr);align-items:start;gap:20px;padding:34px 0 26px;position:relative;z-index:2}
+.specs-label{font:700 13px/1 var(--f-mono);letter-spacing:.16em;display:flex;align-items:center;gap:10px;padding-top:24px}
+.specs-label::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--white)}
+.specs-label::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.45)}
+.spec dt{font:600 13px/1 var(--f-head);letter-spacing:.08em;color:rgba(255,255,255,.95);padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.spec dd{font-size:13px;color:rgba(255,255,255,.62)}
+.hero-foot{display:flex;justify-content:space-between;align-items:center;padding:0 0 26px;font:500 11px/1 var(--f-mono);letter-spacing:.16em;color:rgba(255,255,255,.45);position:relative;z-index:2}
+
+/* ================================
+   Secciones claras (IDEA 2)
+   ================================ */
+.section{padding:120px 0;position:relative}
+.light{background:var(--paper);color:var(--text)}
+.white{background:var(--white);color:var(--text)}
+.dark{background:var(--ink);color:var(--g3)}
+.section-head{max-width:640px;margin-bottom:56px}
+.section-title{font:700 clamp(30px,3.8vw,48px)/1.05 var(--f-head);color:var(--ink);text-transform:uppercase;letter-spacing:.01em;margin-top:14px}
+.dark .section-title{color:var(--white)}
+.section-lead{margin-top:16px;color:var(--muted);font-size:16px}
+.dark .section-lead{color:var(--g3)}
+
+/* Producto */
+.product-grid{display:grid;grid-template-columns:1fr 280px;gap:56px;align-items:center}
+.product-name small{display:block;font:700 12px/1 var(--f-mono);letter-spacing:.24em;color:var(--muted);margin-bottom:10px}
+.product-name h2{font:700 clamp(28px,3vw,40px)/1 var(--f-head);color:var(--ink);letter-spacing:.04em}
+.product-name p{font:600 13px/1.4 var(--f-mono);letter-spacing:.1em;color:var(--red-500);margin-top:8px;text-transform:uppercase}
+.viewer{position:relative;aspect-ratio:16/11;margin-top:20px}
+.viewer::after{content:"";position:absolute;left:10%;right:10%;bottom:2%;height:8%;background:radial-gradient(closest-side,rgba(10,10,10,.28),transparent);z-index:0}
+.viewer img{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0;transform:scale(.97);transition:opacity .5s ease,transform .7s var(--ease)}
+.viewer img.is-on{opacity:1;transform:none}
+.viewer img.cut{object-fit:contain;filter:drop-shadow(0 30px 26px rgba(10,10,10,.35))}
+.viewer img.photo{object-fit:cover;border-radius:4px;box-shadow:0 30px 60px -30px rgba(10,10,10,.5)}
+.thumbs{display:flex;justify-content:center;gap:18px;margin-top:30px;flex-wrap:wrap}
+.thumb{width:110px;aspect-ratio:4/3;border-radius:3px;overflow:hidden;opacity:.45;filter:grayscale(1);border:2px solid transparent;transition:opacity .3s ease,filter .3s ease,border-color .3s ease,transform .3s var(--ease)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb:hover{opacity:.8;transform:translateY(-2px)}
+.thumb.is-on{opacity:1;filter:none;border-color:var(--red-500)}
+.spec-list{list-style:none}
+.spec-list li{padding:18px 0;border-bottom:1px solid var(--line-dark)}
+.spec-list li:first-child{padding-top:0}
+.spec-list span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.spec-list strong{font:700 17px/1.3 var(--f-head);color:var(--ink);letter-spacing:.02em}
+.spec-list + .btn{margin-top:26px;width:100%;justify-content:center}
+
+/* Componentes */
+.dark::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px,
+  linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px;
+  -webkit-mask-image:radial-gradient(80% 70% at 50% 40%,#000,transparent);mask-image:radial-gradient(80% 70% at 50% 40%,#000,transparent);pointer-events:none}
+.dark .container{position:relative}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.comp{position:relative;padding:28px 26px 26px;background:linear-gradient(180deg,var(--g1),#12161B);border:1px solid var(--line);transition:border-color .35s ease,transform .45s var(--ease)}
+.comp:hover{border-color:rgba(255,26,26,.55);transform:translateY(-4px)}
+.comp::before{content:"";position:absolute;left:-1px;top:24px;width:3px;height:28px;background:var(--red-500)}
+.comp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.comp-tag{font:700 11px/1 var(--f-mono);letter-spacing:.18em;color:var(--red)}
+.comp-ico{width:38px;height:38px;color:var(--g3)}
+.comp h3{font:700 22px/1.1 var(--f-head);color:var(--white);letter-spacing:.04em}
+.comp .chip{display:inline-block;margin:8px 0 14px;font:500 12px/1 var(--f-mono);color:var(--g3);padding:6px 9px;border:1px solid var(--line)}
+.comp p{font-size:14.5px;line-height:1.6;color:#9AA4B0}
+
+/* RTSP (bloque texto + imagen) */
+.rtsp-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:64px;align-items:center}
+.rtsp-copy p{color:var(--muted);margin-top:16px}
+.url{margin-top:22px;padding:14px 16px;background:var(--ink);color:var(--g4);font:500 13px/1.5 var(--f-mono);overflow-wrap:anywhere;border-left:3px solid var(--red-500)}
+.url b{color:var(--red)}
+.steps{list-style:none;margin-top:28px;display:grid;gap:14px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start}
+.steps li::before{content:counter(s,decimal-leading-zero);font:700 15px/1 var(--f-mono);color:var(--white);background:var(--red-500);height:36px;display:flex;align-items:center;justify-content:center}
+.steps strong{display:block;font:700 15px/1.3 var(--f-head);color:var(--ink);letter-spacing:.04em}
+.steps span{font-size:14px;color:var(--muted)}
+.rtsp-visual{display:grid;gap:14px;min-width:0}
+.shot{margin:0;background:var(--ink);padding:8px;box-shadow:0 34px 60px -34px rgba(10,10,10,.6)}
+.shot img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.shot.console img{aspect-ratio:5/4;object-position:50% 45%}
+.shot figcaption{display:flex;align-items:center;gap:8px;padding:10px 4px 3px;font:700 11px/1.3 var(--f-mono);letter-spacing:.14em;color:var(--g4)}
+.shot figcaption::before{content:"";flex-shrink:0;width:0;height:0;border-left:8px solid var(--red);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.shot figcaption em{margin-left:auto;font-style:normal;color:var(--red)}
+.ia-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* Logo mascota */
+.mascot{position:relative;overflow:hidden;background:var(--ink);text-align:center;padding-block:110px 30px}
+.mascot::before{content:"";position:absolute;left:50%;top:52%;width:min(900px,120vw);aspect-ratio:1;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(224,20,28,.30),rgba(224,20,28,.08) 55%,transparent);pointer-events:none}
+.mascot img{position:relative;width:min(760px,100%);margin:0 auto;mix-blend-mode:lighten}
+.mascot p{position:relative;margin-top:18px;font:700 12px/1.6 var(--f-mono);letter-spacing:.3em;color:var(--g2)}
+.versus{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:64px}
+.vs{padding:22px 24px;background:var(--paper);border:1px solid var(--line-dark)}
+.vs h4{font:700 15px/1.2 var(--f-head);letter-spacing:.06em;color:var(--ink);display:flex;justify-content:space-between;gap:10px}
+.vs h4 em{font:700 11px/1.6 var(--f-mono);font-style:normal;color:var(--red-500);letter-spacing:.12em}
+.vs p{font-size:14px;color:var(--muted);margin-top:8px}
+
+/* Flujo de datos (mapa) */
+.flow{background:var(--g4)}
+.flow::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(rgba(75,85,99,.09) 1px,transparent 1px) 0 0/32px 32px,
+  linear-gradient(90deg,rgba(75,85,99,.09) 1px,transparent 1px) 0 0/32px 32px;pointer-events:none}
+.flow .container{position:relative}
+.diagram{position:relative;background:rgba(255,255,255,.6);border:1px solid var(--line-dark);padding:18px;box-shadow:0 40px 80px -50px rgba(10,10,10,.4)}
+.diagram svg{width:100%;height:auto;display:block}
+.diagram text{font-family:var(--f-mono)}
+.n-title{font:700 17px var(--f-head);fill:var(--white);letter-spacing:.06em}
+.n-sub{font-size:11.5px;fill:var(--g3)}
+.lbl{font-size:12px;font-weight:700;fill:var(--g1);paint-order:stroke;stroke:#F6F8FA;stroke-width:6px;stroke-linejoin:round}
+.zone-lbl{font-size:11px;font-weight:700;letter-spacing:.16em;fill:var(--g2)}
+.ln{fill:none;stroke-width:2.2}
+.ln.ctl{stroke:var(--red-500)}
+.ln.vid{stroke:var(--g2)}
+.ln.rtsp{stroke:var(--red-500);stroke-dasharray:9 7;animation:dash 1.1s linear infinite}
+.ln.aux{stroke:var(--g2);stroke-dasharray:2 6;stroke-linecap:round}
+@keyframes dash{to{stroke-dashoffset:-16}}
+.pulse{fill:var(--red)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:22px;font:500 12.5px/1 var(--f-mono);color:var(--text)}
+.legend span{display:inline-flex;align-items:center;gap:10px}
+.legend i{display:inline-block;width:34px;height:0;border-top:2.5px solid var(--red-500)}
+.legend i.vid{border-top-color:var(--g2)}
+.legend i.rtsp{border-top-style:dashed}
+.legend i.aux{border-top:2.5px dotted var(--g2)}
+.net-card{position:absolute;top:-34px;right:40px;width:270px;background:var(--white);box-shadow:0 24px 50px -20px rgba(10,10,10,.4);z-index:2}
+.net-card .top{height:70px;background:linear-gradient(135deg,var(--red-700),var(--ink));display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--white)}
+.net-card .top svg{width:30px;height:30px;flex-shrink:0}
+.net-card .top strong{font:700 15px/1.2 var(--f-head);letter-spacing:.06em}
+.net-card .top small{display:block;font:500 11px/1.3 var(--f-mono);color:rgba(255,255,255,.7)}
+.net-card p{padding:12px 16px 14px;font-size:13px;color:var(--muted);line-height:1.5}
+.flow-list{display:none;list-style:none;gap:10px}
+.flow-list li{background:var(--white);border:1px solid var(--line-dark);border-left:4px solid var(--red-500);padding:14px 16px}
+.flow-list li.vid{border-left-color:var(--g2)}
+.flow-list li.aux{border-left-style:dotted;border-left-color:var(--g2)}
+.flow-list strong{display:block;font:700 15px/1.3 var(--f-head);color:var(--ink);letter-spacing:.04em}
+.flow-list span{font:500 12.5px/1.5 var(--f-mono);color:var(--muted)}
+
+/* Footer */
+.footer{background:var(--ink);color:rgba(255,255,255,.55);border-top:1px solid var(--line)}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:40px 0}
+.footer .brand-box{width:48px;height:48px}
+.footer-meta{font:500 12px/1.6 var(--f-mono);letter-spacing:.12em;text-align:right}
+.footer-meta b{color:var(--white)}
+
+/* ================================
+   Responsive
+   Breakpoints: ≥1181 desktop · 901–1180 laptop/tablet grande ·
+   641–900 tablet (hero apilado, menú hamburguesa) · ≤640 celular · ≤380 celular chico
+   ================================ */
+@media (max-width:1180px){
+  .specs{grid-template-columns:repeat(5,1fr)}
+  .specs-label{grid-column:1/-1;padding-top:0;max-width:260px}
+  .comp-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:1080px){
+  .container{padding:0 28px}
+  .product-grid{grid-template-columns:1fr;gap:40px}
+  .spec-list{display:grid;grid-template-columns:repeat(2,1fr);column-gap:32px}
+  .spec-list li:first-child{padding-top:18px}
+  .rtsp-grid{grid-template-columns:1fr;gap:48px}
+  .rtsp-visual{max-width:720px}
+  .net-card{position:relative;top:auto;right:auto;margin:0 0 20px auto}
+}
+@media (max-width:900px){
+  .nav-links{display:none}
+  .nav-toggle{display:flex}
+  .nav-inner{height:76px}
+  .mobile-menu{inset:76px 0 auto}
+  .brand-box{width:50px;height:50px}
+  .hero-main{grid-template-columns:1fr;text-align:center;padding-top:110px;gap:0}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .ghost{left:50%;transform:translateX(-50%);top:-.62em}
+  .hero-tag{justify-content:center}
+  .hero-desc{margin-left:auto;margin-right:auto}
+  .hero-visual{justify-self:center;max-width:600px;margin-top:34px}
+  .specs{grid-template-columns:repeat(3,1fr);row-gap:26px}
+  .section{padding:96px 0}
+  .section-head{margin-bottom:44px}
+  .diagram{display:none}
+  .legend{display:none}
+  .flow-list{display:grid}
+  .net-card{margin:0 0 20px;width:100%;max-width:420px}
+}
+@media (max-width:640px){
+  .container{padding:0 20px}
+  .section{padding:76px 0}
+  .hero-main{padding-top:100px}
+  .explore i{width:90px}
+  .explore:hover i{width:110px}
+  .hud b{width:24px;height:24px}
+  .hud .t1{left:32px}.hud .t2{right:32px}.hud .t3{display:none}
+  .specs{grid-template-columns:repeat(2,1fr);gap:22px 18px;padding-top:26px}
+  .hero-foot{flex-direction:column;gap:10px;text-align:center}
+  .spec-list{grid-template-columns:1fr}
+  .thumbs{gap:10px}
+  .thumb{width:calc(25% - 8px)}
+  .comp-grid{grid-template-columns:1fr}
+  .mascot{padding-block:72px 20px}
+  .ia-grid{gap:10px}
+  .versus{grid-template-columns:1fr;margin-top:48px}
+  .footer-inner{flex-direction:column;align-items:flex-start}
+  .footer-meta{text-align:left}
+}
+@media (max-width:380px){
+  .hero-title{font-size:40px}
+  .brand-text{display:none}
+  .specs{grid-template-columns:1fr 1fr}
+  .ia-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Navbar ============ -->
+<header class="navbar" id="navbar">
+  <div class="container nav-inner">
+    <a href="#inicio" class="brand" aria-label="SHADOW BOT, inicio">
+      <div class="brand-box"><img src="img/logo.jpg" alt=""></div>
+      <div class="brand-text">SHADOW BOT<small>BY GABGARI</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#inicio" class="is-active">Inicio</a></li>
+      <li><a href="#producto">Producto</a></li>
+      <li><a href="#componentes">Componentes</a></li>
+      <li><a href="#rtsp">RTSP</a></li>
+      <li><a href="#flujo">Flujo de datos</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<nav class="mobile-menu" id="mobileMenu">
+  <a href="#inicio">Inicio</a>
+  <a href="#producto">Producto</a>
+  <a href="#componentes">Componentes</a>
+  <a href="#rtsp">RTSP</a>
+  <a href="#flujo">Flujo de datos</a>
+</nav>
+
+<!-- ============ Hero ============ -->
+<section class="hero" id="inicio">
+  <div class="hero-bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#E3121B"/>
+          <stop offset=".55" stop-color="#C20F17"/>
+          <stop offset="1" stop-color="#6E070C"/>
+        </linearGradient>
+        <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency=".008 .02" numOctaves="4" seed="7"/>
+          <feDisplacementMap in="SourceGraphic" scale="46"/>
+        </filter>
+        <filter id="soft"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>
+          <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/>
+        </filter>
+        <linearGradient id="ridgeHi" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FF5A4F" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#FF5A4F" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect width="1440" height="900" fill="url(#sky)"/>
+      <!-- sierra lejana, difuminada -->
+      <g filter="url(#soft)">
+        <path filter="url(#rough)" fill="#B30E16" d="M0,400 L120,350 L210,378 L330,290 L420,330 L520,250 L640,318 L760,240 L880,310 L980,268 L1100,330 L1220,258 L1340,318 L1440,288 V900 H0Z"/>
+      </g>
+      <!-- sierra media con crestas iluminadas -->
+      <g filter="url(#rough)">
+        <path fill="#930B12" d="M0,500 L140,440 L260,480 L400,388 L520,458 L660,410 L800,488 L940,420 L1080,470 L1200,398 L1320,460 L1440,430 V900 H0Z"/>
+        <path fill="none" stroke="url(#ridgeHi)" stroke-width="2" d="M0,500 L140,440 L260,480 L400,388 L520,458 L660,410 L800,488 L940,420 L1080,470 L1200,398 L1320,460 L1440,430"/>
+        <path fill="none" stroke="#FF4A40" stroke-opacity=".16" stroke-width="1.2" d="M60,540 L180,480 L300,520 L430,440 L560,500 L700,455 L830,525 L960,465 L1100,510 L1230,445 L1360,500 M0,590 L150,530 L280,565 L420,500 L560,548 L720,505 L860,570 L1000,515 L1140,555 L1270,500 L1440,540"/>
+      </g>
+      <!-- sierra cercana -->
+      <g filter="url(#rough)">
+        <path fill="#5E070C" d="M0,610 L180,530 L320,590 L480,520 L640,600 L820,548 L1000,622 L1160,552 L1300,602 L1440,570 V900 H0Z"/>
+        <path fill="none" stroke="#FF4A40" stroke-opacity=".22" stroke-width="1.5" d="M0,610 L180,530 L320,590 L480,520 L640,600 L820,548 L1000,622 L1160,552 L1300,602 L1440,570"/>
+      </g>
+      <!-- retícula de radar sutil -->
+      <g fill="none" stroke="#FFFFFF" stroke-opacity=".07">
+        <circle cx="1030" cy="380" r="160"/><circle cx="1030" cy="380" r="260"/><circle cx="1030" cy="380" r="360"/>
+        <path d="M1030,0 V900 M560,380 H1440"/>
+      </g>
+      <rect width="1440" height="900" filter="url(#grain)" opacity=".22"/>
+    </svg>
+  </div>
+  <div class="hero-fade" aria-hidden="true"></div>
+
+  <div class="container hero-main">
+    <div class="hero-copy reveal">
+      <div class="hero-tag">SB-01 · INSPECCIÓN TERRESTRE</div>
+      <div class="title-wrap">
+        <div class="ghost" aria-hidden="true">SHADOW</div>
+        <h1 class="hero-title">Shadow <span>Bot</span></h1>
+      </div>
+      <p class="hero-desc">Vehículo robótico de inspección que ve, mide y analiza por ti: dos cámaras en vivo, visión artificial con YOLO y sensor de gas, todo desde una app.</p>
+      <a href="#producto" class="explore">Explorar <i></i></a>
+    </div>
+    <div class="hero-visual reveal d2">
+      <div class="robot-stage">
+        <div class="hud" aria-hidden="true"><b></b><b></b><b></b><b></b><span class="t1">CAM 1 · MJPEG</span><span class="t2">REC</span><span class="t3">TARGET · SB-01</span></div>
+        <img src="img/robot.webp" alt="SHADOW BOT, vista lateral del carrito con ruedas mecanum y cámara sobre brazo pan/tilt" width="1000" height="880">
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <dl class="specs reveal d3">
+      <div class="specs-label">SPECS</div>
+      <div class="spec"><dt>Modelo</dt><dd>SHADOW BOT SB-01</dd></div>
+      <div class="spec"><dt>Placas</dt><dd>2× ESP32-S3 + ESP8266</dd></div>
+      <div class="spec"><dt>Cámaras</dt><dd>MJPEG + RTSP</dd></div>
+      <div class="spec"><dt>Visión IA</dt><dd>YOLO · fuego y personas</dd></div>
+      <div class="spec"><dt>Red</dt><dd>Wi-Fi 2.4 GHz local</dd></div>
+    </dl>
+    <div class="hero-foot"><span>© 2026 SHADOW BOT · BY GABGARI</span><span>OBSERVA · ANALIZA · ACTÚA</span></div>
+  </div>
+</section>
+
+<!-- ============ Producto ============ -->
+<section class="section light" id="producto">
+  <div class="container product-grid">
+    <div class="reveal">
+      <div class="product-name">
+        <small>SB-01</small>
+        <h2>SHADOW BOT</h2>
+        <p>Vehículo terrestre de inspección</p>
+      </div>
+      <div class="viewer" id="viewer">
+        <img class="cut is-on" src="img/robot.webp" alt="Vista lateral del SHADOW BOT">
+        <img class="photo" src="img/frente.jpg" alt="Vista frontal del SHADOW BOT con la cámara Tapo">
+        <img class="photo" src="img/arriba.jpg" alt="Vista superior del SHADOW BOT">
+        <img class="photo" src="img/app.jpg" alt="Consola de la app en tablet con CAM 1, CAM 2 y telemetría">
+      </div>
+      <div class="thumbs" id="thumbs">
+        <button class="thumb is-on" aria-label="Vista lateral"><img src="img/lado.jpg" alt=""></button>
+        <button class="thumb" aria-label="Vista frontal"><img src="img/frente.jpg" alt=""></button>
+        <button class="thumb" aria-label="Vista superior"><img src="img/arriba.jpg" alt=""></button>
+        <button class="thumb" aria-label="App"><img src="img/app.jpg" alt=""></button>
+      </div>
+    </div>
+    <div class="reveal d2">
+      <ul class="spec-list">
+        <li><span>Movilidad</span><strong>Ruedas mecanum · 2× BTS7960</strong></li>
+        <li><span>Cámaras</span><strong>CAM 1 ESP32-S3 + Tapo C110</strong></li>
+        <li><span>Brazo de cámara</span><strong>Pan / Tilt 0–180°</strong></li>
+        <li><span>Sensor</span><strong>MQ-2 · gas y humo</strong></li>
+        <li><span>Se maneja con</span><strong>App · DualShock 4 · Voz</strong></li>
+      </ul>
+      <a href="#flujo" class="btn">Ver cómo funciona</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Logo mascota ============ -->
+<section class="mascot" aria-label="Logo de SHADOW BOT">
+  <div class="container reveal">
+    <img src="img/mascota.jpg" alt="Logo mascota de SHADOW BOT: robot encapuchado con ojo rojo" width="1100" height="733">
+    <p>OBSERVA · ANALIZA · ACTÚA</p>
+  </div>
+</section>
+
+<!-- ============ Componentes ============ -->
+<section class="section dark" id="componentes">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow">// Componentes</div>
+      <h2 class="section-title">Seis piezas, una sola red</h2>
+      <p class="section-lead">Tres placas a bordo, una cámara IP, la app y una laptop con IA. Ningún cable entre placas: todo habla por Wi-Fi.</p>
+    </div>
+    <div class="comp-grid">
+      <article class="comp reveal">
+        <div class="comp-top"><span class="comp-tag">01 · CEREBRO</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12" rx="1"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></div>
+        <h3>CONTROL</h3><span class="chip">ESP32-S3 N16R8</span>
+        <p>Mueve los motores con dos BTS7960, el brazo pan/tilt con dos servos y muestra el modo en el LCD 16×2.</p>
+      </article>
+      <article class="comp reveal d1">
+        <div class="comp-top"><span class="comp-tag">02 · SENTIDOS</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c-3 4-5 6.5-5 10a5 5 0 0 0 10 0c0-3.5-2-6-5-10Z"/><path d="M12 17a2 2 0 0 1-2-2"/></svg></div>
+        <h3>SENSORES</h3><span class="chip">ESP8266 · MQ-2</span>
+        <p>Mide gas y humo de 0 a 100 % y controla los 4 LEDs que sirven de faros e indicadores.</p>
+      </article>
+      <article class="comp reveal d2">
+        <div class="comp-top"><span class="comp-tag">03 · OJO</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg></div>
+        <h3>CAM 1</h3><span class="chip">ESP32-S3 CAM · MJPEG</span>
+        <p>Video en vivo y fotos por HTTP. Al encender, avisa por Telegram las IPs de las tres placas.</p>
+      </article>
+      <article class="comp reveal">
+        <div class="comp-top"><span class="comp-tag">04 · VIGÍA</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="14" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M9 21h6M12 17v4"/></svg></div>
+        <h3>CAM 2</h3><span class="chip">Tapo C110 · RTSP</span>
+        <p>Cámara IP con audio. Su transmisión RTSP llega a la app y alimenta al detector de IA.</p>
+      </article>
+      <article class="comp reveal d1">
+        <div class="comp-top"><span class="comp-tag">05 · CONSOLA</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 12h4M8 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/></svg></div>
+        <h3>APP</h3><span class="chip">Android · Flutter</span>
+        <p>Consola horizontal: dos cámaras, manejo, telemetría, modos, voz con Gemini y mando DualShock 4.</p>
+      </article>
+      <article class="comp reveal d2">
+        <div class="comp-top"><span class="comp-tag">06 · CEREBRO IA</span>
+          <svg class="comp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 20h22"/><path d="M7 8h3v4H7zM13 9h4M13 12h3"/></svg></div>
+        <h3>VISIÓN IA</h3><span class="chip">Laptop · YOLO</span>
+        <p>Detecta fuego, personas, fisuras y óxido sobre la CAM 2 y devuelve el video anotado a la app.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RTSP ============ -->
+<section class="section white" id="rtsp">
+  <div class="container">
+    <div class="rtsp-grid">
+      <div class="rtsp-copy reveal">
+        <div class="eyebrow">// Protocolo</div>
+        <h2 class="section-title">RTSP: video de la CAM 2</h2>
+        <p><strong>RTSP</strong> (Real Time Streaming Protocol) es el idioma con el que las cámaras IP entregan video en vivo. La Tapo C110 comprime la imagen en H.264 con audio, y cualquiera que tenga la dirección y la clave puede abrir la transmisión.</p>
+        <div class="url">rtsp://<b>usuario</b>:•••••@<b>IP</b>:554/stream2</div>
+        <ol class="steps">
+          <li><div><strong>Conectar</strong><span>La app y la laptop abren el puerto 554 por TCP para que no se pierdan cuadros en Wi-Fi.</span></div></li>
+          <li><div><strong>Reproducir</strong><span>La app lo muestra con libmpv y la laptop lo lee con OpenCV para pasarlo a YOLO.</span></div></li>
+          <li><div><strong>Reconectar sola</strong><span>Si se corta, reintenta; si la IP cambió, busca la Tapo en la red y comprueba la clave.</span></div></li>
+        </ol>
+      </div>
+      <div class="rtsp-visual reveal d2">
+        <figure class="shot console">
+          <img src="img/app.jpg" alt="La consola de la app en tablet con pantalla dividida: CAM 1 arriba y CAM 2 abajo">
+          <figcaption>CONSOLA · CAM 1 + CAM 2</figcaption>
+        </figure>
+        <div class="ia-grid">
+          <figure class="shot">
+            <img src="img/personas.jpg" alt="Detector YOLO marcando dos personas sobre el video RTSP de la Tapo">
+            <figcaption>IA · PERSONAS <em>YOLO</em></figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="img/fuego.jpg" alt="Detector YOLO marcando fuego con 80 % de confianza">
+            <figcaption>IA · FUEGO <em>YOLO</em></figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+    <div class="versus">
+      <div class="vs reveal"><h4>CAM 1 · MJPEG <em>HTTP :81</em></h4><p>Cada cuadro es un JPEG enviado por HTTP. Muy simple y de baja latencia, ideal para manejar.</p></div>
+      <div class="vs reveal d1"><h4>CAM 2 · RTSP <em>TCP :554</em></h4><p>Video comprimido H.264 con audio: más calidad con menos ancho de banda, y lo puede leer la IA.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Flujo de datos ============ -->
+<section class="section flow" id="flujo">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow">// Flujo de datos</div>
+      <h2 class="section-title">Cómo viaja cada dato</h2>
+      <p class="section-lead">El celular crea el hotspot y todos se unen a esa red. Las placas se anuncian solas y la app las encuentra sin escribir IPs.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="net-card">
+        <div class="top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/></svg>
+          <div><strong>HOTSPOT «001»</strong><small>Wi-Fi 2.4 GHz · WPA2</small></div>
+        </div>
+        <p>Video y control viajan solo por la red local. Internet se usa únicamente para Telegram.</p>
+      </div>
+
+      <div class="diagram">
+        <svg viewBox="0 0 1100 690" role="img" aria-label="Diagrama del flujo de datos entre las placas, cámaras, app y laptop">
+          <!-- zonas -->
+          <rect x="20" y="64" width="1060" height="540" rx="14" fill="rgba(255,255,255,.5)" stroke="#B7C1CC" stroke-width="1.5"/>
+          <text x="40" y="90" class="zone-lbl">RED LOCAL · HOTSPOT «001» · WI-FI 2.4 GHz</text>
+          <rect x="44" y="102" width="336" height="474" rx="10" fill="rgba(10,10,10,.03)" stroke="#4B5563" stroke-dasharray="6 6"/>
+          <text x="64" y="128" class="zone-lbl">A BORDO DEL CARRITO</text>
+
+          <!-- enlaces -->
+          <path id="p1" class="ln ctl" d="M360,170 C540,170 540,170 720,170"/>
+          <path id="p2" class="ln vid" d="M360,290 C540,290 540,205 720,205"/>
+          <path id="p3" class="ln vid" d="M360,400 C540,400 540,235 720,235"/>
+          <path id="p4" class="ln rtsp" d="M360,500 C540,500 540,258 720,258"/>
+          <path id="p5" class="ln rtsp" d="M360,520 C540,520 540,475 720,475"/>
+          <path id="p6" class="ln vid" d="M880,420 V270"/>
+          <path class="ln ctl" d="M100,250 V220"/>
+          <path class="ln aux" d="M360,420 H410 V650 H440"/>
+          <path class="ln aux" d="M800,530 V650 H660"/>
+          <path class="ln aux" d="M900,52 V140"/>
+
+          <!-- pulsos que recorren los enlaces -->
+          <circle r="4.5" class="pulse"><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;.5;1" calcMode="linear"><mpath href="#p1"/></animateMotion></circle>
+          <circle r="4.5" class="pulse"><animateMotion dur="2.2s" repeatCount="indefinite" begin=".6s"><mpath href="#p4"/></animateMotion></circle>
+          <circle r="4.5" class="pulse"><animateMotion dur="2.2s" repeatCount="indefinite" begin="1.1s"><mpath href="#p5"/></animateMotion></circle>
+          <circle r="4" fill="#4B5563"><animateMotion dur="2s" repeatCount="indefinite"><mpath href="#p3"/></animateMotion></circle>
+          <circle r="4" fill="#4B5563"><animateMotion dur="1.6s" repeatCount="indefinite"><mpath href="#p6"/></animateMotion></circle>
+
+          <!-- etiquetas de enlaces -->
+          <text x="540" y="160" text-anchor="middle" class="lbl">HTTP :80 · órdenes ⇄ estado</text>
+          <text x="540" y="252" text-anchor="middle" class="lbl">HTTP /sensors · UDP 4210</text>
+          <text x="540" y="322" text-anchor="middle" class="lbl">MJPEG :81/stream</text>
+          <text x="540" y="384" text-anchor="middle" class="lbl">RTSP/TCP :554</text>
+          <text x="540" y="502" text-anchor="middle" class="lbl">RTSP :554 → YOLO</text>
+          <text x="894" y="338" class="lbl">MJPEG :5000/video</text>
+          <text x="894" y="358" class="lbl">UDP 5001 (anuncio)</text>
+          <text x="112" y="240" class="lbl" style="font-size:11px">MQ-2 c/0.5 s</text>
+          <text x="404" y="596" text-anchor="end" class="lbl" style="font-size:11px">IPs de las placas</text>
+          <text x="812" y="592" class="lbl" style="font-size:11px">alertas de fuego · /foto</text>
+          <text x="912" y="100" class="lbl" style="font-size:11px">Bluetooth</text>
+
+          <!-- nodos -->
+          <g>
+            <rect x="64" y="140" width="296" height="80" rx="8" fill="#1A1F26"/><rect x="64" y="140" width="4" height="80" fill="#E0141C"/>
+            <text x="86" y="174" class="n-title">CONTROL</text><text x="86" y="198" class="n-sub">ESP32-S3 · motores · brazo · LCD</text>
+          </g>
+          <g>
+            <rect x="64" y="250" width="296" height="80" rx="8" fill="#1A1F26"/><rect x="64" y="250" width="4" height="80" fill="#E0141C"/>
+            <text x="86" y="284" class="n-title">SENSORES</text><text x="86" y="308" class="n-sub">ESP8266 · MQ-2 · 4 LEDs</text>
+          </g>
+          <g>
+            <rect x="64" y="360" width="296" height="80" rx="8" fill="#1A1F26"/><rect x="64" y="360" width="4" height="80" fill="#E0141C"/>
+            <text x="86" y="394" class="n-title">CAM 1</text><text x="86" y="418" class="n-sub">ESP32-S3 CAM · video MJPEG</text>
+          </g>
+          <g>
+            <rect x="64" y="470" width="296" height="80" rx="8" fill="#1A1F26"/><rect x="64" y="470" width="4" height="80" fill="#E0141C"/>
+            <text x="86" y="504" class="n-title">CAM 2 · TAPO C110</text><text x="86" y="528" class="n-sub">Cámara IP · RTSP + audio</text>
+          </g>
+          <g>
+            <rect x="720" y="140" width="320" height="130" rx="8" fill="#0A0A0A"/><rect x="720" y="140" width="320" height="4" fill="#E0141C"/>
+            <text x="744" y="180" class="n-title" style="font-size:20px">APP SHADOW BOT</text>
+            <text x="744" y="206" class="n-sub">Android · Flutter</text>
+            <text x="744" y="228" class="n-sub">consola · video · telemetría · voz</text>
+            <text x="744" y="250" class="n-sub" fill="#FF1A1A" style="fill:#FF6A5F">celular = hotspot</text>
+          </g>
+          <g>
+            <rect x="720" y="420" width="320" height="110" rx="8" fill="#0A0A0A"/><rect x="720" y="420" width="320" height="4" fill="#E0141C"/>
+            <text x="744" y="460" class="n-title" style="font-size:20px">VISIÓN IA</text>
+            <text x="744" y="486" class="n-sub">Laptop · YOLO</text>
+            <text x="744" y="508" class="n-sub">fuego · personas · fisuras · óxido</text>
+          </g>
+          <g>
+            <rect x="800" y="14" width="200" height="38" rx="19" fill="#FFFFFF" stroke="#4B5563"/>
+            <text x="900" y="38" text-anchor="middle" style="font-size:12px;font-weight:700;fill:#1A1F26">MANDO DUALSHOCK 4</text>
+          </g>
+          <g>
+            <rect x="440" y="630" width="220" height="42" rx="21" fill="#FFFFFF" stroke="#4B5563"/>
+            <text x="550" y="656" text-anchor="middle" style="font-size:12px;font-weight:700;fill:#1A1F26">TELEGRAM · INTERNET</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="legend">
+        <span><i></i>Control (HTTP)</span>
+        <span><i class="vid"></i>Video y datos</span>
+        <span><i class="rtsp"></i>RTSP</span>
+        <span><i class="aux"></i>Avisos · Bluetooth</span>
+      </div>
+
+      <!-- versión celular del diagrama -->
+      <ul class="flow-list">
+        <li><strong>APP ⇄ CONTROL</strong><span>HTTP :80 · órdenes de manejo y brazo, lectura de estado</span></li>
+        <li><strong>SENSORES → CONTROL</strong><span>valor del MQ-2 cada 0.5 s</span></li>
+        <li class="vid"><strong>SENSORES → APP</strong><span>HTTP /sensors · las placas se anuncian por UDP 4210</span></li>
+        <li class="vid"><strong>CAM 1 → APP</strong><span>video MJPEG en :81/stream</span></li>
+        <li><strong>CAM 2 → APP</strong><span>RTSP/TCP :554 · H.264 + audio</span></li>
+        <li><strong>CAM 2 → VISIÓN IA</strong><span>RTSP :554 → YOLO en la laptop</span></li>
+        <li class="vid"><strong>VISIÓN IA → APP</strong><span>video anotado MJPEG :5000 · anuncio UDP 5001</span></li>
+        <li class="aux"><strong>MANDO → APP</strong><span>Bluetooth con el celular</span></li>
+        <li class="aux"><strong>CAM 1 · IA → TELEGRAM</strong><span>IPs de las placas y alertas de fuego</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Footer ============ -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <a href="#inicio" class="brand">
+      <div class="brand-box"><img src="img/logo.jpg" alt=""></div>
+      <div class="brand-text">SHADOW BOT<small>BY GABGARI</small></div>
+    </a>
+    <div class="footer-meta"><b>SB-01</b> · Vehículo terrestre de inspección<br>© 2026 GABGARI · Todos los derechos reservados</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var navbar=document.getElementById('navbar');
+  var toggle=document.getElementById('navToggle');
+  var menu=document.getElementById('mobileMenu');
+
+  function onScroll(){navbar.classList.toggle('is-solid',window.scrollY>30);}
+  onScroll();
+  window.addEventListener('scroll',onScroll,{passive:true});
+
+  toggle.addEventListener('click',function(){
+    var open=document.body.classList.toggle('nav-open');
+    toggle.setAttribute('aria-expanded',open);
+    navbar.classList.add('is-solid');
+  });
+  menu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click',function(){document.body.classList.remove('nav-open');toggle.setAttribute('aria-expanded',false);});
+  });
+
+  // Reveal on scroll
+  var items=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target);}});
+    },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+    items.forEach(function(el){io.observe(el);});
+  }else{items.forEach(function(el){el.classList.add('is-visible');});}
+
+  // Galería del producto
+  var shots=document.querySelectorAll('#viewer img');
+  var thumbs=document.querySelectorAll('#thumbs .thumb');
+  thumbs.forEach(function(t,i){
+    t.addEventListener('click',function(){
+      shots.forEach(function(s,j){s.classList.toggle('is-on',i===j);});
+      thumbs.forEach(function(x,j){x.classList.toggle('is-on',i===j);});
+    });
+  });
+
+  // Enlace activo del menú
+  var links=document.querySelectorAll('.nav-links a');
+  var secs=Array.prototype.map.call(links,function(a){return document.querySelector(a.getAttribute('href'));});
+  if('IntersectionObserver' in window){
+    var so=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting)return;
+        var i=secs.indexOf(e.target);
+        links.forEach(function(l,j){l.classList.toggle('is-active',i===j);});
+      });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    secs.forEach(function(s){so.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>
